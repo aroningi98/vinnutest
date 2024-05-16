@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>ArcGIS Scatter Plot</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.23/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.23/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html, body, #viewDiv, #chartDiv {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #chartDiv {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 40%;
+            height: 100%;
+            background-color: white;
+            z-index: 10;
+        }
+        #viewDiv {
+            width: 60%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewDiv"></div>
+    <div id="chartDiv">
+        <canvas id="scatterChart"></canvas>
+    </div>
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/FeatureLayer",
+            "esri/tasks/support/Query"
+        ], function(Map, MapView, FeatureLayer, Query) {
+            var map = new Map({
+                basemap: "topo-vector"
+            });
+
+            var view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [-100, 40],
+                zoom: 4
+            });
+
+            var featureLayer = new FeatureLayer({
+                url: "https://services2.arcgis.com/rmrALMmpPh0iZNsU/ArcGIS/rest/services/Layer_1_view/FeatureServer/0?token=3NKHt6i2urmWtqOuugvr9TrF8d2U9v_qt5hxRAiyNOmHEJDm5bz_YkDRu7P5TpXfwWUtbKxat-owNo7jHGqUwjJRbm3OMI-ON-Fi9VpjuVWTOamAP1ORDWpXO_zGWYE_5MNjI27J86uz6s1NrmaWY96qhrqwkRddVpORMzA8FxfKVD_fhXoEgAyTx1SfGn2ggj-WlzbFnWnqyzRRzypdQhwEKXY5jeK7wYtxBFG1Vy10-pgqLeTM91BFjSIWIsLby9a4ZQhOK1qCGfwjyhW7pA.."
+            });
+
+            map.add(featureLayer);
+
+            // Query to fetch all features
+            var query = new Query();
+            query.where = "1=1";
+            query.outFields = ["*"];
+            query.returnGeometry = false;
+
+            featureLayer.queryFeatures(query).then(function(result) {
+                var features = result.features;
+                var data = features.map(function(feature) {
+                    return {
+                        x: feature.attributes["time_date "], // replace with your field name for x
+                        y: feature.attributes["data_m1_pressure "]  // replace with your field name for y
+                    };
+                });
+
+                // Plotting using Chart.js
+                var ctx = document.getElementById('scatterChart').getContext('2d');
+                var scatterChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Feature Layer Data',
+                            data: data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
